@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import "dotenv/config";
-import { MongoClient } from "mongodb";
+import { MongoClient, ObjectId } from "mongodb";
 
 // Fail fast if the DB connection string is missing (e.g. not set on Vercel)
 if (!process.env.MONGODB_URI) {
@@ -36,7 +36,7 @@ app.get("/", (req, res) => {
 });
 
 app.get("/user", async (req, res) => {
-	const data = await users.find({}, { projection: { password: 0 } }).toArray();
+	const data = await users.find({}).toArray();
 	res.json({ success: true, data });
 });
 
@@ -44,16 +44,33 @@ app.get("/jobs", async (req, res) => {
 	const data = await jobs.find({}).toArray();
 	res.json({ success: true, data });
 });
+app.get("/jobs/:id", async (req, res) => {
+	const id = req.params.id;
+	const data = await jobs.findOne({
+		_id: new ObjectId(id),
+	});
+	res.json({ success: true, data });
+});
 
 app.post("/jobs", async (req, res) => {
-	// Only accept the fields we need — never insert raw req.body
-	// const { title, company, category, deadline, description } = req.body;
-	// if (!title || !company) {
-	// 	return sendError(res, 400, "title and company are required");
-	// }
 	const job = req.body;
 	const result = await jobs.insertOne(job);
 	res.status(201).json({ success: true, insertedId: result.insertedId });
+});
+
+app.delete("/jobs/:id", async (req, res) => {
+	const id = req.params.id;
+	const result = await jobs.deleteOne({
+		_id: new ObjectId(id),
+	});
+	res.json({ success: true, deletedCount: result.deletedCount });
+});
+
+app.put("/jobs/:id", async (req, res) => {
+	const id = req.params.id;
+	const job = req.body;
+	const result = await jobs.updateOne({ _id: new ObjectId(id) }, { $set: job });
+	res.json({ success: true, modifiedCount: result.modifiedCount });
 });
 
 // 404 for unknown routes (JSON instead of the default HTML page)
@@ -70,7 +87,7 @@ app.use((err, req, res, next) => {
 // Listen locally only (Vercel handles this via serverless functions)
 if (!process.env.VERCEL) {
 	app.listen(8000, () => {
-		console.log(`Server is running on port ${PORT}`);
+		console.log(`Server is running on port ${8000}`);
 	});
 }
 
