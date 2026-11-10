@@ -22,17 +22,38 @@ export async function connectToMongoDB() {
 }
 const mongodbClient = await connectToMongoDB();
 const db = mongodbClient.db("hireloop_db");
+const users = db.collection("user");
 const jobs = db.collection("all_jobs");
 
-// Define a route for the root URL
+// read apis
 app.get("/", (req, res) => {
 	res.send("Hello, World!");
 });
-
-// Start the server
-const PORT = process.env.PORT || 8000;
-app.listen(PORT, () => {
-	console.log(`Server is running on port ${PORT}`);
+app.get("/user", async (req, res) => {
+	const cursor = users.find({});
+	const data = await cursor.toArray();
+	res.send(data);
 });
 
-// export default app;
+app.get("/jobs", async (req, res) => {
+	const cursor = jobs.find({});
+	const data = await cursor.toArray();
+	res.send(data);
+});
+
+app.post("/jobs", async (req, res) => {
+	const data = req.body;
+	const result = jobs.insertOne(data);
+	res.send(result);
+});
+
+// Listen locally only (Vercel handles this via serverless functions)
+if (!process.env.VERCEL) {
+	const PORT = process.env.PORT || 8000;
+	app.listen(PORT, () => {
+		console.log(`Server is running on port ${PORT}`);
+	});
+}
+
+// Export the app for Vercel serverless deployment
+export default app;
