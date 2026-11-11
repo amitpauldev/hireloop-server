@@ -40,10 +40,45 @@ app.get("/user", async (req, res) => {
 	res.json({ success: true, data });
 });
 
+// Helper function to escape special characters in regex
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 app.get("/jobs", async (req, res) => {
-	const data = await jobs.find({}).toArray();
+	const query = {};
+
+	const { search, category, jobType, remote } = req.query;
+
+	if (search) {
+		const searchRegex = {
+			$regex: escapeRegex(search),
+			$options: "i",
+		};
+
+		query.$or = [
+			{ title: searchRegex },
+			{ companyName: searchRegex },
+			{ location: searchRegex },
+			{ responsibilities: searchRegex },
+			{ requirements: searchRegex },
+		];
+	}
+
+	if (category) {
+		query.category = {
+			$regex: escapeRegex(category),
+			$options: "i",
+		};
+	}
+	if (jobType) query.jobType = jobType;
+
+	if (remote !== undefined) {
+		query.remote = remote === "true";
+	}
+
+	const data = await jobs.find(query).toArray();
+
 	res.json({ success: true, data });
 });
+
 app.get("/jobs/:id", async (req, res) => {
 	const id = req.params.id;
 	const data = await jobs.findOne({
