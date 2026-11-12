@@ -68,7 +68,17 @@ app.get("/jobs", async (req, res) => {
 			$options: "i",
 		};
 	}
-	if (jobType) query.jobType = jobType;
+	// if (jobType)
+	// 	query.jobType = {
+	// 		$regex: jobType,
+	// 		$options: "i",
+	// 	};
+
+	if (jobType) {
+		query.jobType = {
+			$in: Array.isArray(jobType) ? jobType : [jobType],
+		};
+	}
 
 	if (remote !== undefined) {
 		query.remote = remote === "true";
