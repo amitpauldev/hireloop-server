@@ -14,6 +14,7 @@ await client.connect();
 const db = client.db("hireloop_db");
 const users = db.collection("user");
 const jobs = db.collection("all_jobs");
+const applications = db.collection("all_applications");
 
 const app = express();
 
@@ -116,6 +117,19 @@ app.put("/jobs/:id", async (req, res) => {
 	const job = req.body;
 	const result = await jobs.updateOne({ _id: new ObjectId(id) }, { $set: job });
 	res.json({ success: true, modifiedCount: result.modifiedCount });
+});
+
+// applications
+app.post("/applications", async (req, res) => {
+	const application = req.body;
+	const result = await applications.insertOne(application);
+	res.status(201).json({ success: true, insertedId: result.insertedId });
+});
+
+app.get("/applications", async (req, res) => {
+	const data = await applications.find({}).toArray();
+
+	res.json({ success: true, data });
 });
 
 // 404 for unknown routes (JSON instead of the default HTML page)
