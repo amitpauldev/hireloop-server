@@ -127,9 +127,15 @@ app.post("/applications", async (req, res) => {
 });
 
 app.get("/applications", async (req, res) => {
-	const data = await applications.find({}).toArray();
+	const query = {};
+	if (req.query.applicantId) {
+		query.userId = req.query.applicantId;
+	}
+	const cursor = applications.find(query);
 
-	res.json({ success: true, data });
+	const data = await cursor.toArray();
+
+	res.json({ success: true, count: data.length, data });
 });
 
 // 404 for unknown routes (JSON instead of the default HTML page)
